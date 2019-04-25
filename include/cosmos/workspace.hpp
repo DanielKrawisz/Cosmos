@@ -7,19 +7,12 @@ namespace cosmos {
     
     namespace work {
         
-        struct communicable {
-            virtual void text(stringstream&) const = 0;
-            virtual void json(stringstream&) const = 0;
-        };
-        
-        
         // all items in the workspace have a name, and
         // this is the type that we use to represent names.
-        struct name final : public communicable {
+        struct name final : public writable {
             string Name;
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct binary;
@@ -30,7 +23,7 @@ namespace cosmos {
         
         // anything that can appear in the
         // workspace is an item. 
-        struct item : public communicable {            
+        struct item : public writable {            
             virtual ptr<binary> concatinate(binary&) const {
                 throw exception::invalid_operation{};
             };
@@ -63,8 +56,7 @@ namespace cosmos {
                 return *this;
             }
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             
         private:
             space set(name, ptr<item>) const;
@@ -73,63 +65,53 @@ namespace cosmos {
         };
         
         struct script final : public binary, public bitcoin::script {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct address final : public binary, public bitcoin::address {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct pubkey final : public binary, public bitcoin::pubkey {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct secret final : public binary, public bitcoin::secret {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct txid final : public binary, public bitcoin::txid {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct digest final : public binary, public bitcoin::digest {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct transaction final : public binary {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
             void bytes(ostream&) const override;
         };
         
         struct number final : public item {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct wallet final : public item {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct keysource final : public item {
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
-        struct operation : public communicable {
+        struct operation : public writable {
             struct application;
             
             virtual application apply(const space) const = 0;
@@ -212,8 +194,7 @@ namespace cosmos {
                 return application{s};
             };
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::constant final : public operation {
@@ -222,8 +203,7 @@ namespace cosmos {
                 return {s, Constant};
             }
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::sequence final : public operation {
@@ -238,8 +218,7 @@ namespace cosmos {
                 return a;
             }
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::set final : public operation {
@@ -252,8 +231,7 @@ namespace cosmos {
                 return a;
             }
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::name final : public operation {
@@ -263,36 +241,31 @@ namespace cosmos {
                 else return {s, error::unrecognized_name(Name)};
             }
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::concatination final : public operation {
             application apply(const space) const override;
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::plus final : public operation {
             application apply(const space) const override;
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         }; 
         
         struct operation::times final : public operation {
             application apply(const space) const override;
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
         struct operation::function final : public operation {
             application apply(const space) const override;
             
-            void text(stringstream&) const override;
-            void json(stringstream&) const override;
+            formats& write() const override;
         };
         
     }

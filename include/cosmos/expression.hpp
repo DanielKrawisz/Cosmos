@@ -1,5 +1,5 @@
-#ifndef COSMOS_WORKSPACE
-#define COSMOS_WORKSPACE
+#ifndef COSMOS_EXPRESSION
+#define COSMOS_EXPRESSION
 
 #include "cosmos.hpp"
 

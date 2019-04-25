@@ -16,6 +16,7 @@
 
 #include <data/math/number/gmp/N.hpp>
 
+#include <abstractions/fundamental.hpp>
 #include <abstractions/wallet/address.hpp>
 #include <abstractions/wallet/keys.hpp>
 #include <abstractions/wallet/output.hpp>
@@ -28,9 +29,9 @@ namespace cosmos {
     using string = const std::string;
     
     template <typename X>
-    using vector = std::vector<X>;
+    using vector = abstractions::vector<X>;
     
-    using bytes = vector<byte>;
+    using bytes = abstractions::bytes;
     
     using ostream = std::ostream;
     using istream = std::istream;
@@ -83,6 +84,16 @@ namespace cosmos {
     namespace program {
         using output = data::program::output;
     }
+    
+    struct writable {
+        
+        struct formats {
+            virtual void text(stringstream&) const = 0;
+            virtual void json(stringstream&) const = 0;
+        };
+        
+        virtual const formats& write() const = 0;
+    };
     
     namespace exception {
         using unimplemented = data::method::unimplemented;
