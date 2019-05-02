@@ -16,11 +16,11 @@
 
 #include <data/math/number/gmp/N.hpp>
 
-#include <abstractions/fundamental.hpp>
 #include <abstractions/wallet/address.hpp>
 #include <abstractions/wallet/keys.hpp>
-#include <abstractions/wallet/output.hpp>
 #include <abstractions/wallet/input.hpp>
+#include <abstractions/wallet/output.hpp>
+#include <abstractions/wallet/transaction.hpp>
 
 namespace cosmos {
     
@@ -29,9 +29,9 @@ namespace cosmos {
     using string = const std::string;
     
     template <typename X>
-    using vector = abstractions::vector<X>;
+    using vector = std::vector<X>;
     
-    using bytes = abstractions::bytes;
+    using bytes = vector<byte>;
     
     using ostream = std::ostream;
     using istream = std::istream;
@@ -49,6 +49,7 @@ namespace cosmos {
     
     using N = data::math::number::gmp::N;
     
+    // Bitcoin primitives. 
     namespace bitcoin {
         using satoshi = uint32_t;
         using index = uint32_t;
@@ -57,12 +58,23 @@ namespace cosmos {
         using secret = abstractions::bitcoin::secret;
         using txid = abstractions::bitcoin::txid;
         using digest = data::sha256::digest;
-        using script = abstractions::bitcoin::script;
-        using output = abstractions::bitcoin::output;
+        using script = bytes;
+        
         using outpoint = abstractions::bitcoin::outpoint;
         using input = abstractions::bitcoin::input;
-        using transaction = vector<byte>;
+        using output = abstractions::bitcoin::output;
+        using transaction = abstractions::bitcoin::transaction;
     }
+    
+    struct writable {
+        
+        struct formats {
+            virtual void text(stringstream&) const = 0;
+            virtual void json(stringstream&) const = 0;
+        };
+        
+        virtual const formats& write() const = 0;
+    };
         
     // functions understood by this machine. 
     enum function {
@@ -84,16 +96,6 @@ namespace cosmos {
     namespace program {
         using output = data::program::output;
     }
-    
-    struct writable {
-        
-        struct formats {
-            virtual void text(stringstream&) const = 0;
-            virtual void json(stringstream&) const = 0;
-        };
-        
-        virtual const formats& write() const = 0;
-    };
     
     namespace exception {
         using unimplemented = data::method::unimplemented;

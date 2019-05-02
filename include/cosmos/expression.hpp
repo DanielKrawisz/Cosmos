@@ -2,78 +2,67 @@
 #define COSMOS_EXPRESSION
 
 #include "cosmos.hpp"
+#include <data/fold.hpp>
 
 namespace cosmos {
     
-    struct operation;
+    struct expression : public writable {
     
-    struct expression {
+        // constructible objects in the workspace. 
+        enum constructible {
+            invalid = 0, 
+            outpoint = 1, 
+            input = 2, 
+            output = 3, 
+            transaction = 4, 
+            key_generator = 5, 
+            wallet = 6, 
+        };
         
-        // The operation corresponding to this expression, 
-        // if it exists. 
-        ptr<operation> Operation;  
-        
-        expression() : Operation{nullptr} {};
-        
-        struct atom;
-        
-        struct data;
+        struct construction final : public writable {
+            constructible Type;
+            list<ptr<expression>> Arguments;
+            
+            bool valid() {
+                return Type != 0 &&
+                    data::fold([](bool b, ptr<expression> p)->bool{
+                            return b && p != nullptr;
+                        }, true, Arguments);
+            }
+            
+            const formats& write() const override;
+
+            construction(constructible t, list<ptr<expression>> arg) : Type{t}, Arguments{arg} {}
+        };
         
         struct number;
-        
         struct address;
-        
         struct secret;
-        
-        struct name;
-        
-        template<typename left> struct plus;
-        
-        template<typename left> struct times;
-        
-        struct concatinate {};
-        
-        struct set;
-        
-        struct function_argument;
-        
-        struct function_application {
-            function Function;
-            function_argument argument();
-        };
-            
-        number operator()(N);
-        address operator()(bitcoin::address);
-        secret operator()(bitcoin::secret);
-        data operator()(bytes); 
-        name operator()(string);
-        function_application operator()(function);
+        struct hex;
         
     };
     
-    struct expression::atom : public expression {};
-    
-    struct expression::data : public atom {
-        expression::concatinate concatinate() const;
+    struct expression::number final : public expression {
+        N number;
+        const formats& write() const override;
     };
     
-    struct expression::number final : public atom {
-        plus<number> plus() const;
-        times<number> times() const;
+    struct expression::address final : public bitcoin::address, public expression {
+        const formats& write() const override;
     };
     
-    struct expression::address final : public atom {};
-    
-    struct expression::secret final : public atom {};
-    
-    struct expression::name final : public atom {
-        expression::set set() const;
+    struct expression::secret final : public bitcoin::secret, public expression {
+        const formats& write() const override;
     };
     
-    struct expression::set final : public expression {};
+    struct expression::hex final : public bytes, public expression {
+        const formats& write() const override;
+    };
     
-    struct expression::function_argument final : public expression {};
-    
+    struct expressible {
+        virtual expression express() const = 0;
+    };
+
 }
 
-#endif 
+#endif
