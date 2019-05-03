@@ -2,65 +2,53 @@
 #define COSMOS_EXPRESSION
 
 #include "cosmos.hpp"
-#include <data/fold.hpp>
 
 namespace cosmos {
     
-    struct expression : public writable {
-    
-        // constructible objects in the workspace. 
-        enum constructible {
-            invalid = 0, 
-            outpoint = 1, 
-            input = 2, 
-            output = 3, 
-            transaction = 4, 
-            key_generator = 5, 
-            wallet = 6, 
-        };
+    struct expression {
         
-        struct construction final : public writable {
-            constructible Type;
-            list<ptr<expression>> Arguments;
-            
-            bool valid() {
-                return Type != 0 &&
-                    data::fold([](bool b, ptr<expression> p)->bool{
-                            return b && p != nullptr;
-                        }, true, Arguments);
-            }
-            
-            const formats& write() const override;
-
-            construction(constructible t, list<ptr<expression>> arg) : Type{t}, Arguments{arg} {}
-        };
+        using parameters = list<ptr<expression>>;
+        static bool valid(parameters);
+        static void write_text(const parameters&, string inter);
+    
+        struct compound;
         
-        struct number;
-        struct address;
-        struct secret;
-        struct hex;
+        template <typename X>
+        struct constructor;
         
-    };
-    
-    struct expression::number final : public expression {
-        N number;
-        const formats& write() const override;
-    };
-    
-    struct expression::address final : public bitcoin::address, public expression {
-        const formats& write() const override;
-    };
-    
-    struct expression::secret final : public bitcoin::secret, public expression {
-        const formats& write() const override;
-    };
-    
-    struct expression::hex final : public bytes, public expression {
-        const formats& write() const override;
+        template <function fn>
+        struct application;
+        
+        template <operand op>
+        struct operation;
+        
+        template <typename X>
+        struct atomic;
+        
+        virtual bool valid() const = 0;
+        virtual void write_text(stringstream& ss) const = 0; 
+        
     };
     
     struct expressible {
-        virtual expression express() const = 0;
+        virtual ptr<expression> express() const = 0;
+    };
+    
+    bool valid(expression const* e) {
+        if (e == nullptr) return false;
+        return e->valid();
+    }
+        
+    struct expression::compound : public expression {
+        parameters Parameters;
+        
+        bool valid() const override {
+            return expression::valid(Parameters);
+        }
+        
+        compound(list<ptr<expression>> arg) : Type{t}, Arguments{arg} {}
+        
+        virtual ~compound() = 0;
     };
 
 }

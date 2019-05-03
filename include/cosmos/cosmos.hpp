@@ -65,16 +65,6 @@ namespace cosmos {
         using output = abstractions::bitcoin::output;
         using transaction = abstractions::bitcoin::transaction;
     }
-    
-    struct writable {
-        
-        struct formats {
-            virtual void text(stringstream&) const = 0;
-            virtual void json(stringstream&) const = 0;
-        };
-        
-        virtual const formats& write() const = 0;
-    };
         
     // functions understood by this machine. 
     enum function {
@@ -87,6 +77,12 @@ namespace cosmos {
         update = 5,
         spend = 6,
         next_address = 7, 
+    };
+    
+    enum operand {
+        plus = 1, 
+        times = 2, 
+        concat = 3, 
     };
     
     namespace file {

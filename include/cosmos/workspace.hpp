@@ -19,11 +19,37 @@ namespace cosmos {
         // workspace is an item. 
         struct item : public expressible {};
         
+        struct operation;
+        
+        // the workspace. 
+        struct space final : public item {
+            map<name, ptr<item>> Contents;
+            
+            bool valid() const {
+                return Valid;
+            }
+            
+            space(const space& s) : Contents{s.Contents}, {}
+            space() : Contents{}, {};
+            
+            space& operator=(const space& s) {
+                Contents = s.Contents; 
+                return *this;
+            }
+            
+        private:
+            space set(name, ptr<item>) const;
+            
+            space(bool b) : Contents{}
+            
+            friend struct operation;
+        };
+        
         struct number final : public item {
             expression::number N;
             expression express() const override {
                 return N;
-            }
+            } 
         };
         
         struct hex final : public item {
@@ -79,34 +105,6 @@ namespace cosmos {
             expression express() const override;
         };
         
-        struct operation;
-        
-        // the workspace. 
-        struct space final : public item {
-            map<name, ptr<item>> Contents;
-            bool Valid;
-            
-            bool valid() const {
-                return Valid;
-            }
-            
-            space(const space& s) : Contents{s.Contents}, Valid{s.Valid} {}
-            space() : Contents{}, Valid{false} {};
-            
-            space& operator=(const space& s) {
-                Contents = s.Contents;
-                Valid = s.Valid;
-                return *this;
-            }
-            
-            formats& write() const override;
-            
-        private:
-            space set(name, ptr<item>) const;
-            
-            friend struct operation;
-        };
-        
         struct wallet final : public item {
             expression express() const override;
         };
@@ -116,6 +114,8 @@ namespace cosmos {
         };
         
     }
+    
+    ptr<expression> evaluate(work::space)
     
 }
 

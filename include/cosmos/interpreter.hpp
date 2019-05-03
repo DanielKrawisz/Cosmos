@@ -1,11 +1,11 @@
 #ifndef COSMOS_INTERPRETER
 #define COSMOS_INTERPRETER
 
-#include "statement.hpp"
+#include "workspace.hpp"
 
 namespace cosmos {
     
-    struct interpreter {
+    namespace interpreter {
         
         struct error {
             std::string Message;
@@ -66,18 +66,10 @@ namespace cosmos {
             
             friend struct interpreter;
         };
-        
-        static response intpretet(work::space w, statement::expression& s);
-        
-        static response intpretet(work::space w, statement::set_statement& s);
-        
-        static response intpretet(work::space w, statement::single& s);
-        
-        static response interpret(work::space w, statement::compound& s);
-        
-        static response interpret(work::space w, statement& s);
             
-    };
+    }
+    
+    interpreter::response evaluate(const work::space, const expression *);
     
 }
 
