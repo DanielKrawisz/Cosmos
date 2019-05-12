@@ -1,3 +1,7 @@
+// Copyright (c) 2019 Daniel Krawisz
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef COSMOS_COSMOS
 #define COSMOS_COSMOS
 
@@ -76,13 +80,21 @@ namespace cosmos {
         public_key = 4, 
         update = 5,
         spend = 6,
-        next_address = 7, 
+        next_address = 7
     };
     
     enum operand {
         plus = 1, 
         times = 2, 
         concat = 3, 
+        set = 4
+    };
+    
+    enum constructor {
+        outpoint = 1, 
+        input = 2, 
+        output = 3, 
+        tx = 4
     };
     
     namespace file {

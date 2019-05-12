@@ -1,3 +1,7 @@
+// Copyright (c) 2019 Daniel Krawisz
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef COSMOS_FORMAT
 #define COSMOS_FORMAT
 
@@ -8,6 +12,7 @@ namespace cosmos {
     namespace format {
         
         struct text;
+        struct hex;
         
         // This will be template-specialized for each type
         // that can be formatted as text. 
@@ -21,6 +26,22 @@ namespace cosmos {
         template <typename format, typename type> struct read {
             read() = delete;
             void operator()(type& t, stringstream& ss) const;
+        };
+        
+        template <> struct write<text, string> {
+            void operator()(const string& t, stringstream& ss) const;
+        };
+        
+        template <> struct read<text, string> {
+            void operator()(string& t, stringstream& ss) const;
+        };
+        
+        template <> struct write<hex, bytes> {
+            void operator()(const bytes& t, stringstream& ss) const;
+        };
+        
+        template <> struct read<hex, bytes> {
+            void operator()(bytes& t, stringstream& ss) const;
         };
         
     };
