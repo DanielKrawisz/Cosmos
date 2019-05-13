@@ -20,11 +20,8 @@
 
 #include <data/math/number/gmp/N.hpp>
 
-#include <abstractions/wallet/address.hpp>
-#include <abstractions/wallet/keys.hpp>
-#include <abstractions/wallet/input.hpp>
-#include <abstractions/wallet/output.hpp>
-#include <abstractions/wallet/transaction.hpp>
+#include <abstractions/wallet/machine.hpp>
+#include <abstractions/wallet/proto.hpp>
 
 namespace cosmos {
     
@@ -68,6 +65,9 @@ namespace cosmos {
         using input = abstractions::bitcoin::input;
         using output = abstractions::bitcoin::output;
         using transaction = abstractions::bitcoin::transaction;
+        
+        using machine = abstractions::bitcoin::machine;
+        using wallet = abstractions::bitcoin::proto<machine>;
     }
         
     // functions understood by this machine. 
@@ -80,21 +80,28 @@ namespace cosmos {
         public_key = 4, 
         update = 5,
         spend = 6,
-        next_address = 7
+        next_address = 7, 
+        evaluate_script = 8
     };
     
-    enum operand {
+    enum op {
+        equal = 0,
         plus = 1, 
-        times = 2, 
-        concat = 3, 
-        set = 4
+        times = 2,
+        less = 3, 
+        greater = 4, 
+        less_equal = 5,
+        greater_equal = 6, 
+        concat = 7, 
+        set = 8
     };
     
     enum constructor {
         outpoint = 1, 
         input = 2, 
         output = 3, 
-        tx = 4
+        transaction = 4, 
+        wallet = 6
     };
     
     namespace file {

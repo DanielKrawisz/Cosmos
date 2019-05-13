@@ -29,11 +29,11 @@ namespace cosmos {
         };
         
         template <> struct operand<cosmos::times> {
-            using times = times;
+            using token = times;
         };
         
         template <> struct operand<cosmos::concat> {
-            using concat = concat;
+            using token = concat;
         };
         
         template <typename x> struct write {

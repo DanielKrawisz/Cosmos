@@ -13,7 +13,7 @@ namespace cosmos {
     
     struct expression {
         
-        using parameters = list<ptr<expression>>;
+        using parameters = cosmos::list<ptr<expression>>;
         static bool valid(const parameters& p) {
             for (ptr<expression> e : p) if (e == nullptr) return false;
             return true;
