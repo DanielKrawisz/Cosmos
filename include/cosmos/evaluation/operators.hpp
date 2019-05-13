@@ -2,15 +2,23 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef COSMOS_OPERATORS
-#define COSMOS_OPERATORS
+#ifndef COSMOS_EVALUATION_OPERATORS
+#define COSMOS_EVALUATION_OPERATORS
 
-#include "cosmos.hpp"
-#include "name.hpp"
+#include <cosmos/cosmos.hpp>
+#include <cosmos/name.hpp>
 
 namespace cosmos {
     
-    template <typename x, op o, typename y> struct operation;
+    template <typename x, op o, typename y> struct operation {
+        operation() {
+            throw exception::invalid_operation{};
+        }
+        
+        unconstructable operator()(x a, y b) {
+            throw exception::invalid_operation{};
+        }
+    };
     
     template <> struct operation<N, plus, N> {
         N operator()(N n, N m) {

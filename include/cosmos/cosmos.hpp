@@ -17,7 +17,7 @@
 #include <data/map/rb.hpp>
 
 #include <data/crypto/sha256.hpp>
-
+#include <data/function.hpp>
 #include <data/math/number/gmp/N.hpp>
 
 #include <abstractions/wallet/machine.hpp>
@@ -49,6 +49,8 @@ namespace cosmos {
     using map = data::rb_map<X, Y>;
     
     using N = data::math::number::gmp::N;
+    
+    using unconstructable = data::unconstructable;
     
     // Bitcoin primitives. 
     namespace bitcoin {
