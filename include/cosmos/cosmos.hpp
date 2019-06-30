@@ -19,9 +19,12 @@
 #include <data/crypto/sha256.hpp>
 #include <data/function.hpp>
 #include <data/math/number/gmp/N.hpp>
+#include <data/encoding/hex.hpp>
 
 #include <abstractions/wallet/machine.hpp>
 #include <abstractions/wallet/proto.hpp>
+#include <abstractions/script/address.hpp>
+#include <abstractions/work/work.hpp>
 
 namespace cosmos {
     
@@ -61,15 +64,20 @@ namespace cosmos {
         using secret = abstractions::bitcoin::secret;
         using txid = abstractions::bitcoin::txid;
         using digest = data::sha256::digest;
-        using script = bytes;
+        using script = abstractions::script::address;
         
         using outpoint = abstractions::bitcoin::outpoint;
-        using input = abstractions::bitcoin::input;
-        using output = abstractions::bitcoin::output;
-        using transaction = abstractions::bitcoin::transaction;
+        using input = abstractions::bitcoin::input<script>;
+        using output = abstractions::bitcoin::output<script>;
+        using transaction = abstractions::bitcoin::transaction<script>;
         
-        using machine = abstractions::bitcoin::machine;
-        using wallet = abstractions::bitcoin::proto<machine>;
+        using machine = abstractions::bitcoin::machine<script&>;
+        using wallet = abstractions::bitcoin::proto<machine, script>;
+        
+        namespace work {
+            using target = abstractions::work::target;
+            using candidate = abstractions::work::candidate;
+        }
     }
         
     // functions understood by this machine. 
