@@ -48,33 +48,12 @@ namespace cosmos {
             friend struct operation;
         };
         
-        struct number final : public item {
-            N Number;
-            ptr<expression> express() const override;
-        };
-        
-        struct bytes final : public item {
-            cosmos::bytes Bytes;
-            ptr<expression> express() const override;
-        };
-        
-        struct address final : public item {
-            bitcoin::address Address;
-            ptr<expression> express() const override;
-        };
-        
-        struct pubkey final : public item {
-            bitcoin::pubkey Pubkey;
-            ptr<expression> express() const override;
-        };
-        
-        struct secret final : public item {
-            bitcoin::secret Secret;
-            ptr<expression> express() const override;
-        };
-        
-        struct script final : public item {
-            bitcoin::script Script;
+        template <typename X>
+        struct atom final : public item {
+            X Atom;
+            
+            atom(X a) : Atom{a} {}
+            
             ptr<expression> express() const override;
         };
         
@@ -86,7 +65,7 @@ namespace cosmos {
             ptr<expression> express() const override;
         };
         
-        struct input final : public bitcoin::input::representation, public item {
+        struct input final : public bitcoin::input, public item {
             ptr<expression> express() const override;
         };
         

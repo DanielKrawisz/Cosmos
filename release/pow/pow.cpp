@@ -4,11 +4,6 @@
 
 namespace cosmos {
     
-    bitcoin::address read_address_from_script(const bytes&);
-    uint read_uint(const std::string&);
-    bitcoin::secret read_wif(const std::string&);
-    bitcoin::work::candidate candidate(data::encoding::ascii::string message, uint exponent, uint value);
-    
     namespace pow {
             
         class error : std::exception {
@@ -21,6 +16,25 @@ namespace cosmos {
                 return Message.c_str();
             }
         };
+    
+        bitcoin::address read_address_from_script(const bytes&);
+        uint read_uint(const std::string&);
+        bitcoin::secret read_wif(const std::string&);
+        data::encoding::ascii::string read_ascii(const std::string&);
+        byte read_byte(const std::string&);
+        abstractions::work::uint24 read_uint24(const std::string&);
+        
+        bitcoin::work::candidate read_candidate(
+            const std::string& message, 
+            const std::string& exponent,
+            const std::string& value) {
+            bytes b = read_ascii(message);
+            if (b.size() != abstractions::work::message_size) throw error{"wrong message size. Must be 68 characters."};
+            abstractions::work::message m{};
+            std::copy(b.begin(), b.end(), m.begin());
+            return bitcoin::work::candidate{m,
+                bitcoin::work::target{read_byte(exponent), read_uint24(value)}};
+        }
         
         bitcoin::script lock(bitcoin::work::candidate);
         
@@ -30,7 +44,7 @@ namespace cosmos {
             bitcoin::secret key,
             bitcoin::work::candidate candidate)
         {
-            if (ref.Reference != prev.hash()) throw error{"invalid reference to previous tx"};
+            if (ref.Reference != prev.id()) throw error{"invalid reference to previous tx"};
             bitcoin::transaction::representation previous{prev};
             if (!previous.Valid) throw error{"invalid tx"};
             if (previous.Outputs.size() >= ref.Index) throw error{"No such output in previous tx"};
@@ -58,13 +72,15 @@ namespace cosmos {
                 bitcoin::secret k, 
                 bitcoin::work::candidate c) : Previous{t}, Reference{r}, Key{k}, Candidate{c} {}
         
-            program(list<std::string> input) {
+            static program make(list<std::string> input) {
                 if (input.size() != 6) throw error{"six inputs required"};
-                Previous = bitcoin::transaction{input[0]};
-                if (!Previous.valid()) throw error{"transaction is not valid"};
-                Reference = bitcoin::outpoint{Previous.hash(), read_uint(input[1])};
-                Key = read_wif(input[2]);
-                Candidate = candidate(input[3], input[4], input[5]);
+                bitcoin::transaction p{input[0]};
+                if (!p.valid()) throw error{"transaction is not valid"};
+                return program{p, bitcoin::outpoint{p.id(), read_uint(input[1])}, read_wif(input[2]), read_candidate(input[3], input[4], input[5])};
+            }
+            
+            bool valid() const {
+                return Previous.valid() && Key.valid();
             }
             
             bitcoin::transaction operator()() {
@@ -85,8 +101,8 @@ int main(int argc, char* argv[]) {
     std::string out;
     
     try {
-        out = data::encoding::hex::write(pow::program{read_input(argc, argv)}());
-    } catch (cosmos::pow::error e) {
+        out = data::encoding::hex::write(pow::program::make(read_input(argc, argv))());
+    } catch (std::exception& e) {
         out = e.what();
     }
     

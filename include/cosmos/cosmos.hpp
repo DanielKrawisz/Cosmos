@@ -65,15 +65,15 @@ namespace cosmos {
         using secret = abstractions::bitcoin::secret;
         using txid = abstractions::bitcoin::txid;
         using digest = data::sha256::digest;
-        using script = bytes;
+        using script = abstractions::bitcoin::script;
         
         using outpoint = abstractions::bitcoin::outpoint;
-        using input = abstractions::bitcoin::input<script>;
-        using output = abstractions::bitcoin::output<script>;
-        using transaction = abstractions::bitcoin::transaction<script>;
+        using input = abstractions::bitcoin::input;
+        using output = abstractions::bitcoin::output;
+        using transaction = abstractions::bitcoin::transaction;
         
         using machine = abstractions::bitcoin::machine<script&>;
-        using wallet = abstractions::bitcoin::proto<machine, script>;
+        using wallet = abstractions::bitcoin::proto<machine>;
         
         namespace work {
             using target = abstractions::work::target;

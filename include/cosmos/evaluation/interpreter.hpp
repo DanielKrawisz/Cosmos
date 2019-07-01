@@ -71,90 +71,66 @@ namespace cosmos {
 
         };
         
-        struct intermediate;
+        struct close;
         
         // representation of states of evaluation which are ready
         // for new input and have possibly generated a response.
         struct open {
-            response Response;
-            list<ptr<intermediate>> Stack;
+            work::space Workspace;
+            cosmos::list<ptr<open>> Stack;
             
-            open(response r, list<ptr<intermediate>> s) : Response{r}, Stack{s} {}
-            open(response r) : Response{r}, Stack{} {}
+            open(work::space w, cosmos::list<ptr<open>> s) : Workspace{w}, Stack{s} {}
+            open(work::space w) : Workspace{w}, Stack{} {}
             
-            virtual ptr<intermediate> read_name(cosmos::name n) const;
-            virtual ptr<intermediate> read_number(N n) const;
-            virtual ptr<intermediate> read_address(bitcoin::address a) const;
-            virtual ptr<intermediate> read_pubkey(bitcoin::pubkey p) const;
-            virtual ptr<intermediate> read_secret(bitcoin::secret s) const;
+            virtual ptr<close> read_name(cosmos::name n) const;
+            virtual ptr<close> read_number(N n) const;
+            virtual ptr<close> read_address(bitcoin::address a) const;
+            virtual ptr<close> read_pubkey(bitcoin::pubkey p) const;
+            virtual ptr<close> read_secret(bitcoin::secret s) const;
             
-            virtual ptr<open> read_function(cosmos::function) const = 0;
-            virtual ptr<open> read_construction(constructor) const = 0;
-            virtual ptr<open> read_parenthesis() const = 0;
-            virtual uint precedence() const = 0;
+            ptr<open> read_function(cosmos::function) const;
+            ptr<open> read_construction(constructor) const;
+            ptr<open> read_parenthesis() const;
+            
+            virtual ~open() = 0;
         };
         
         // type generated at the start of an evaluation before 
         // any input has been read. 
         struct interpreter final : public open {
             
-            interpreter(work::space w) : open{evaluation::response{w}} {}
-            
-            uint precedence() const override {
-                return 10000;
-            };
-            
-            ptr<open> read_function(cosmos::function) const override;
-            ptr<open> read_construction(constructor) const override;
-            ptr<open> read_parenthesis() const override;
+            interpreter(work::space w) : open{w} {}
 
         };
         
         // representation of states of evaluation which necessarily
         // require more input before a response can be generated. 
-        struct intermediate {
-            const work::space Workspace;
-            list<ptr<intermediate>> Stack;
+        struct close {
+            response Response;
+            cosmos::list<ptr<open>> Stack;
             
-            intermediate(work::space w, list<ptr<intermediate>> ss) : Workspace{w}, Stack{ss} {}
+            close(response r, cosmos::list<ptr<open>> stack) : Response{r}, Stack{stack} {}
             
+            ptr<open> next() const;
+            ptr<open> close_structure() const;
             virtual ptr<open> read_operand(op) const = 0;
-            virtual ptr<open> read_comma() const = 0;
-            ptr<open> close() const;
         };
         
         template <typename A>
-        struct atom final : public intermediate {
-            A Atom;
+        struct atom final : public close {
+            ptr<work::atom<A>> Atom;
             
-            atom(A a, work::space w, list<ptr<intermediate>> ss) : intermediate{w, ss}, Atom{a} {}
+            atom(ptr<work::atom<A>> a, work::space w, list<ptr<open>> stack) : close{response{w, a}, stack}, Atom{a} {}
             
             ptr<open> read_operand(op) const override;
-            ptr<open> read_comma() const override;
-        };
             
-        inline ptr<intermediate> open::read_name(cosmos::name n) const {
-            return std::make_shared<intermediate>(new atom<cosmos::name>{n, Response.Result, Stack});
-        }
-        
-        inline ptr<intermediate> open::read_number(N n) const {
-            return std::make_shared<intermediate>(new atom<N>{n, Response.Result, Stack});
-        }
-        
-        inline ptr<intermediate> open::read_address(bitcoin::address a) const {
-            return std::make_shared<intermediate>(new atom<bitcoin::address>{a, Response.Result, Stack});
-        }
-        
-        inline ptr<intermediate> open::read_pubkey(bitcoin::pubkey p) const {
-            return std::make_shared<intermediate>(new atom<bitcoin::pubkey>{p, Response.Result, Stack});
-        }
-        
-        inline ptr<intermediate> open::read_secret(bitcoin::secret s) const {
-            return std::make_shared<intermediate>(new atom<bitcoin::secret>{s, Response.Result, Stack});
-        }
+            inline static ptr<atom> make(A a, work::space w, list<ptr<open>> stack) {
+                return std::make_shared<atom>(new atom{std::make_shared<work::atom<A>>(new work::atom<A>{a}), w, stack});
+            }
+        };
         
         template <typename A, op o, typename B> 
-        struct operation final : public intermediate {
+        struct operation final : public close {
             atom<A> Left;
             atom<B> Right;
             cosmos::operation<A, o, B> Operation;
@@ -162,57 +138,40 @@ namespace cosmos {
             operation(atom<A> a, atom<B> b) : Left{a}, Right{b}, Operation{} {}
             
             ptr<open> read_operand(op) const override;
-            ptr<open> read_comma() const override;
         };
         
         template <typename A, op o>
         struct operand final : public open {
-            atom<A> Left;
+            ptr<work::atom<A>> Left;
             
-            ptr<intermediate> read_name(name n) const override {
-                return std::make_shared<intermediate>(new operation<A, o, name>(Left, n));
-            }
+            operand(ptr<work::atom<A>> a, work::space w, list<ptr<open>> stack) : open{w, stack}, Left{a} {}
             
-            ptr<intermediate> read_number(N n) const override {
-                return std::make_shared<intermediate>(new operation<A, o, N>(Left, n));
-            }
-            
-            ptr<intermediate> read_address(bitcoin::address a) const override {
-                return std::make_shared<intermediate>(new operation<A, o, bitcoin::address>(Left, a));
-            }
-            
-            ptr<intermediate> read_pubkey(bitcoin::pubkey p) const override {
-                return std::make_shared<intermediate>(new operation<A, o, bitcoin::pubkey>(Left, p));
-            }
-            
-            ptr<intermediate> read_secret(bitcoin::secret s) const override {
-                return std::make_shared<intermediate>(new operation<A, o, bitcoin::secret>(Left, s));
-            }
-            
-            ptr<open> read_function(cosmos::function) const override;
-            ptr<open> read_construction(constructor) const override;
-            ptr<open> read_parenthesis() const override;
-            uint precedence() const override;
+            ptr<close> read_name(name n) const override;
+            ptr<close> read_number(N n) const override;
+            ptr<close> read_address(bitcoin::address a) const override;
+            ptr<close> read_pubkey(bitcoin::pubkey p) const override;
+            ptr<close> read_secret(bitcoin::secret s) const override;
             
         };
         
-        template <typename A>
-        inline ptr<open> atom<A>::read_operand(op o) const {
-            return std::make_shared<open>(new operand{Atom, o});
-        }
+        struct parenthesis final : public open {
+            const open* Previous;
+            parenthesis(work::space w, const open* p, list<ptr<open>> s) : open{w, s}, Previous{p} {}
+            parenthesis(work::space w, const open* p) : open{w}, Previous{p} {}
+        };
         
         struct sequence : public open {
             list<ptr<work::item>> Sequence;
             
-            sequence(list<ptr<work::item>> s, evaluation::response r, list<ptr<intermediate>> ss)
-                : open{r, ss}, Sequence{s} {}
+            sequence(list<ptr<work::item>> s, work::space w, list<ptr<open>> ss)
+                : open{w, ss}, Sequence{s} {}
             
-            ptr<open> read_function(cosmos::function) const override;
-            ptr<open> read_construction(constructor) const override;
-            ptr<open> read_parenthesis() const override;
-            uint precedence() const override;
-            
+            ptr<sequence> next(ptr<work::item> p) const {
+                return std::make_shared<sequence>(new sequence{Sequence.prepend(p), Workspace, Stack});
+            }
         };
+        
+        struct list final : public sequence {};
         
         struct function final : public sequence {
             cosmos::function Function;
@@ -221,6 +180,57 @@ namespace cosmos {
         struct construction : public sequence {
             cosmos::constructor Constructor;
         };
+            
+        inline ptr<close> open::read_name(cosmos::name n) const {
+            return atom<cosmos::name>::make(n, Workspace, Stack);
+        }
+        
+        inline ptr<close> open::read_number(N n) const {
+            return atom<N>::make(n, Workspace, Stack);
+        }
+        
+        inline ptr<close> open::read_address(bitcoin::address a) const {
+            return atom<bitcoin::address>::make(a, Workspace, Stack);
+        }
+        
+        inline ptr<close> open::read_pubkey(bitcoin::pubkey p) const {
+            return atom<bitcoin::pubkey>::make(p, Workspace, Stack);
+        }
+        
+        inline ptr<close> open::read_secret(bitcoin::secret s) const {
+            return atom<bitcoin::secret>::make(s, Workspace, Stack);
+        }
+        
+        inline ptr<open> open::read_parenthesis() const {
+            return std::make_shared<open>(new parenthesis{Workspace, this, Stack});
+        }
+        
+        open::~open() {};
+        
+        template <typename A, op o>
+        inline ptr<close> operand<A, o>::read_name(name n) const {
+            return std::make_shared<close>(new operation<A, o, name>(Left, n));
+        }
+        
+        template <typename A, op o>
+        inline ptr<close> operand<A, o>::read_number(N n) const {
+            return std::make_shared<close>(new operation<A, o, N>(Left, n));
+        }
+        
+        template <typename A, op o>
+        inline ptr<close> operand<A, o>::read_address(bitcoin::address a) const {
+            return std::make_shared<close>(new operation<A, o, bitcoin::address>(Left, a));
+        }
+        
+        template <typename A, op o>
+        inline ptr<close> operand<A, o>::read_pubkey(bitcoin::pubkey p) const {
+            return std::make_shared<close>(new operation<A, o, bitcoin::pubkey>(Left, p));
+        }
+        
+        template <typename A, op o>
+        inline ptr<close> operand<A, o>::read_secret(bitcoin::secret s) const {
+            return std::make_shared<close>(new operation<A, o, bitcoin::secret>(Left, s));
+        }
         
     }
     
