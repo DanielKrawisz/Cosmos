@@ -25,6 +25,7 @@
 #include <abstractions/wallet/proto.hpp>
 #include <abstractions/script/address.hpp>
 #include <abstractions/work/work.hpp>
+#include <abstractions/redeem.hpp>
 
 namespace cosmos {
     
@@ -64,7 +65,7 @@ namespace cosmos {
         using secret = abstractions::bitcoin::secret;
         using txid = abstractions::bitcoin::txid;
         using digest = data::sha256::digest;
-        using script = abstractions::script::address;
+        using script = bytes;
         
         using outpoint = abstractions::bitcoin::outpoint;
         using input = abstractions::bitcoin::input<script>;
@@ -78,6 +79,11 @@ namespace cosmos {
             using target = abstractions::work::target;
             using candidate = abstractions::work::candidate;
         }
+        
+        using pattern = abstractions::pattern::abstract::recognizable<secret, script, address, transaction, machine>&;
+        
+        using vertex = abstractions::vertex<secret, output, outpoint>;
+        transaction (*redeem)(list<pattern>, vertex) = abstractions::redeem<secret, address, script, output, outpoint, transaction, machine>;
     }
         
     // functions understood by this machine. 
