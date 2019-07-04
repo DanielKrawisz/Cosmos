@@ -1,5 +1,6 @@
 #include <cosmos/cosmos.hpp>
 #include <data/encoding/ascii.hpp>
+#include <abstractions/script/pow.hpp>
 #include <iostream>
 
 namespace cosmos {
@@ -28,7 +29,7 @@ namespace cosmos {
             const std::string& message, 
             const std::string& exponent,
             const std::string& value) {
-            bytes b = read_ascii(message);
+            bytes b = bytes(read_ascii(message));
             if (b.size() != abstractions::work::message_size) throw error{"wrong message size. Must be 68 characters."};
             abstractions::work::message m{};
             std::copy(b.begin(), b.end(), m.begin());
@@ -36,7 +37,9 @@ namespace cosmos {
                 bitcoin::work::target{read_byte(exponent), read_uint24(value)}};
         }
         
-        bitcoin::script lock(bitcoin::work::candidate);
+        inline bitcoin::script lock(bitcoin::work::candidate c) {
+            return *abstractions::script::lock_by_pow(c);
+        }
         
         bitcoin::transaction main(
             bitcoin::transaction prev,

@@ -23,7 +23,6 @@
 
 #include <abstractions/wallet/machine.hpp>
 #include <abstractions/wallet/proto.hpp>
-#include <abstractions/script/address.hpp>
 #include <abstractions/work/work.hpp>
 #include <abstractions/redeem.hpp>
 
