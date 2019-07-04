@@ -71,7 +71,7 @@ namespace cosmos {
         using output = abstractions::bitcoin::output;
         using transaction = abstractions::bitcoin::transaction;
         
-        using machine = abstractions::bitcoin::machine<script&>;
+        using machine = abstractions::bitcoin::machine;
         using wallet = abstractions::bitcoin::proto<machine>;
         
         namespace work {
@@ -83,6 +83,7 @@ namespace cosmos {
         
         using vertex = abstractions::vertex<secret, output, outpoint>;
         transaction (*redeem)(list<pattern>, vertex) = abstractions::redeem<secret, address, script, output, outpoint, transaction, machine>;
+
     }
         
     // functions understood by this machine. 
