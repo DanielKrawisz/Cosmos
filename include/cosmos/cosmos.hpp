@@ -76,6 +76,7 @@ namespace cosmos {
         
         namespace work {
             using target = abstractions::work::target;
+            using message = abstractions::work::message;
             using candidate = abstractions::work::candidate;
         }
         
