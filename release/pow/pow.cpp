@@ -20,6 +20,7 @@ namespace cosmos {
             }
         };
         
+        // patterns recognized by this wallet (only one for now) 
         abstractions::bitcoin::pay_to_address p2pkh{};
         
         uint read_uint(const std::string&);
@@ -30,48 +31,49 @@ namespace cosmos {
         
         abstractions::work::uint24 read_uint24(const std::string&);
         
-        inline bitcoin::secret read_wif(const std::string& s) {
+        inline const bitcoin::secret read_wif(const std::string& s) {
             bitcoin::secret k{s};
             if (!k.valid()) throw error{"invalid wif"};
         }
         
         using ascii = data::encoding::ascii::string;
         
-        inline ascii read_ascii(const std::string& s) {
+        inline const ascii read_ascii(const std::string& s) {
             data::encoding::ascii::string z{s};
             if (!z.valid()) throw error{"Cannot read ascii string"};
             return z;
         }
         
-        bitcoin::address read_address(const std::string& s) {
+        inline const bitcoin::address read_address(const std::string& s) {
             bitcoin::address a{s};
             if (!a.valid()) throw error{"invalid address"};
             return a;
         }
     
-        bitcoin::address read_address_from_script(const bytes& b) {
+        inline const bitcoin::address read_address_from_script(const bytes& b) {
             struct abstractions::script::pay_to_address p{b};
             if (!p.valid()) throw error{"invalid pay-to-address script"};
             return p.Address;
         }
         
-        inline bitcoin::work::target read_target(
+        inline const bitcoin::work::target read_target(
             const std::string& exponent,
             const std::string& value) {
             return bitcoin::work::target{read_byte(exponent), read_uint24(value)};
         }
         
-        inline bitcoin::script pow_lock(bitcoin::work::message m, bitcoin::work::target t) {
+        inline const bitcoin::script pow_lock(bitcoin::work::message m, bitcoin::work::target t) {
             return abstractions::script::lock_by_pow(m, t)->compile();
         }
         
-        bitcoin::output op_return_output(bytes);
-        
-        inline bitcoin::output pow_lock_output(bitcoin::satoshi s, bitcoin::work::message m, bitcoin::work::target t) {
+        inline const bitcoin::output pow_lock_output(
+            bitcoin::satoshi s, 
+            bitcoin::work::message m, 
+            bitcoin::work::target t) {
             return bitcoin::output{s, pow_lock(m, t)};
         }
         
-        inline bitcoin::output pay_to_address_output(bitcoin::satoshi s, bitcoin::address a) {
+        inline const bitcoin::output pay_to_address_output(bitcoin::satoshi s, bitcoin::address a) {
             return bitcoin::output{s, abstractions::script::pay_to(a)->compile()};
         }
         
@@ -81,16 +83,18 @@ namespace cosmos {
             
             spendable(bitcoin::transaction, bitcoin::outpoint, bitcoin::secret); 
             
-            bool valid() const;
+            bool valid() const {
+                return Transaction.valid() && Spendable.valid();
+            }
         };
         
-        bitcoin::transaction main(
-            list<spendable> outputs, 
-            ascii data, 
-            bitcoin::satoshi spend, 
-            bitcoin::work::target target, 
-            bitcoin::address change, 
-            bitcoin::satoshi fee)
+        const bitcoin::transaction main(
+            const list<spendable> outputs, 
+            const ascii data, 
+            const bitcoin::satoshi spend, 
+            const bitcoin::work::target target, 
+            const bitcoin::address change, 
+            const bitcoin::satoshi fee)
         {
             list<bitcoin::vertex::spendable> to_be_redeemed{};
             bitcoin::satoshi redeemed_value = 0;
@@ -105,15 +109,13 @@ namespace cosmos {
             
             return bitcoin::redeem({p2pkh}, 
                 bitcoin::vertex{to_be_redeemed, {
-                    op_return_output(data),
+                    abstractions::bitcoin::op_return(data),
                     pow_lock_output(spend, abstractions::work::reference(abstractions::sha256::hash(data)), target), 
                     pay_to_address_output(redeemed_value - fee, change)}});
         }
 
-        struct program {
-            bitcoin::transaction Previous;
-            bitcoin::outpoint Reference;
-            bitcoin::secret Key;
+        class program {
+            list<spendable> Previous;
             ascii Data;
             bitcoin::satoshi Spend;
             bitcoin::work::target Target;
@@ -128,10 +130,11 @@ namespace cosmos {
                 bitcoin::satoshi s, 
                 bitcoin::work::target t, 
                 bitcoin::address c, 
-                bitcoin::satoshi f) : Previous{tx}, Reference{r}, Key{k}, Data{d}, Target{t}, Change{c}, Fee{f} {}
+                bitcoin::satoshi f) : Previous{{tx, r, k}}, Data{d}, Target{t}, Change{c}, Fee{f} {}
         
+        public:
             // Transform intput into constructed types.
-            static program make(list<std::string> input) {
+            static const program make(const list<std::string> input) {
                 if (input.size() != 9) throw error{"nine inputs required"};
                 bitcoin::transaction p{input[0]};
                 if (!p.valid()) throw error{"transaction is not valid"};
@@ -141,38 +144,51 @@ namespace cosmos {
             }
             
             bool valid() const {
-                return Previous.valid() && Key.valid();
+                return data::fold([](bool p, spendable x)->bool{return p && x.valid();}, 0, Previous);
             }
             
-            bitcoin::transaction operator()() {
-                return pow::main({{Previous, Reference, Key}}, Data, Spend, Target, Change, Fee);
+            const bitcoin::transaction operator()() const {
+                const bitcoin::transaction tx{pow::main(Previous, Data, Spend, Target, Change, Fee)};
+                if (!tx.valid()) throw error{"invalid tx was produced"};
+                auto p = Previous;
+                auto i = bitcoin::transaction::representation{tx}.Inputs;
+                uint n = 0;
+                while(!p.empty()) {
+                    bitcoin::output o = p.first().Spendable.Output;
+                    if (!bitcoin::machine{tx, n, o.Value}.run(o.ScriptPubKey, i.first().ScriptSignature))
+                        throw error{"redemption script not valid"};
+                    p = p.rest();
+                    i = i.rest();
+                    n++;
+                }
+                
+                // TODO test whether pow_lock object can be reconstructed from the script. 
+                // TODO test redeem tx (optional; only for small pow targets).
+                return tx;
             };
         };
     
     }
 
-    list<std::string> read_input(int argc, char* argv[]) {
+    const list<std::string> read_input(int argc, char* argv[]) noexcept {
         list<std::string> l{};
         for (int i = 0; i < argc; i++) l = l + std::string(argv[i]);
         return l;
+    }
+
+    string run(const list<std::string> input) noexcept {
+        try {
+            return data::encoding::hex::write(pow::program::make(input)());
+        } catch (std::exception& e) {
+            return e.what();
+        }
     }
     
 }
         
 int main(int argc, char* argv[]) {
-    using namespace cosmos;
-    using namespace std;
-    
-    std::string out;
-    
-    try {
-        out = data::encoding::hex::write(pow::program::make(read_input(argc, argv))());
-    } catch (std::exception& e) {
-        out = e.what();
-    }
-    
-    cout << out;
-    
+    std::cout << cosmos::run(cosmos::read_input(argc, argv));
     return 0;
 }
+
 
