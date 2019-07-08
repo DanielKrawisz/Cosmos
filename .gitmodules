@@ -1,0 +1,8 @@
+[submodule "data"]
+	path = data
+	url = https://github.com/nekosune/data.git
+	branch = master
+[submodule "wallet-abstractions"]
+	path = wallet-abstractions
+	url = https://github.com/nekosune/wallet-abstractions.git
+	branch = master
