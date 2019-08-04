@@ -3,6 +3,7 @@
 #include <abstractions/script/pow.hpp>
 #include <abstractions/script/pay_to_address.hpp>
 #include <abstractions/pattern/pay_to_address.hpp>
+#include <abstractions/wallet/hash.hpp>
 #include <iostream>
 
 namespace cosmos {
@@ -23,13 +24,13 @@ namespace cosmos {
         // patterns recognized by this wallet (only one for now) 
         abstractions::bitcoin::pay_to_address p2pkh{};
         
-        uint read_uint(const std::string&);
+        uint read_uint_dec(const std::string&);
         
-        byte read_byte(const std::string&);
+        byte read_byte_dec(const std::string&);
         
         bitcoin::satoshi read_satoshi_amount(const std::string&);
         
-        abstractions::work::uint24 read_uint24(const std::string&);
+        abstractions::work::uint24 read_uint24_dec(const std::string&);
         
         inline const bitcoin::secret read_wif(const std::string& s) {
             bitcoin::secret k{s};
@@ -39,7 +40,7 @@ namespace cosmos {
         using ascii = data::encoding::ascii::string;
         
         inline const ascii read_ascii(const std::string& s) {
-            data::encoding::ascii::string z{s};
+            data::encoding::ascii::string z{&s};
             if (!z.valid()) throw error{"Cannot read ascii string"};
             return z;
         }
@@ -59,7 +60,7 @@ namespace cosmos {
         inline const bitcoin::work::target read_target(
             const std::string& exponent,
             const std::string& value) {
-            return bitcoin::work::target{read_byte(exponent), read_uint24(value)};
+            return bitcoin::work::target{read_byte_dec(exponent), read_uint24_dec(value)};
         }
         
         inline const bitcoin::script pow_lock(bitcoin::work::message m, bitcoin::work::target t) {
@@ -109,8 +110,8 @@ namespace cosmos {
             
             return bitcoin::redeem({p2pkh}, 
                 bitcoin::vertex{to_be_redeemed, {
-                    abstractions::bitcoin::op_return(data),
-                    pow_lock_output(spend, abstractions::work::reference(abstractions::sha256::hash(data)), target), 
+                    abstractions::bitcoin::op_return{bytes(data)},
+                    pow_lock_output(spend, abstractions::work::reference(bitcoin::hash(data)), target), 
                     pay_to_address_output(redeemed_value - fee, change)}});
         }
 
@@ -138,7 +139,7 @@ namespace cosmos {
                 if (input.size() != 9) throw error{"nine inputs required"};
                 bitcoin::transaction p{input[0]};
                 if (!p.valid()) throw error{"transaction is not valid"};
-                return program{p, bitcoin::outpoint{p.id(), read_uint(input[1])}, 
+                return program{p, bitcoin::outpoint{p.id(), read_uint_dec(input[1])}, 
                     read_wif(input[2]), read_ascii(input[3]), read_satoshi_amount(input[4]), 
                     read_target(input[5], input[6]), read_address(input[7]), read_satoshi_amount(input[8])};
             }
@@ -181,6 +182,8 @@ namespace cosmos {
             return data::encoding::hex::write(pow::program::make(input)());
         } catch (std::exception& e) {
             return e.what();
+        } catch (...) {
+            return "unknown error.";
         }
     }
     
@@ -190,5 +193,3 @@ int main(int argc, char* argv[]) {
     std::cout << cosmos::run(cosmos::read_input(argc, argv));
     return 0;
 }
-
-
