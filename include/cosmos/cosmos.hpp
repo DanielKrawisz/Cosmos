@@ -13,22 +13,22 @@
 #include <data/io/main.hpp>
 #include <data/io/unimplemented.hpp>
 
-#include <data/list/linked_list.hpp>
-#include <data/map/rb.hpp>
-
-#include <data/crypto/sha256.hpp>
 #include <data/function.hpp>
-#include <data/math/number/gmp/N.hpp>
 #include <data/encoding/hex.hpp>
+
+#include <data/data.hpp>
 
 #include <abstractions/wallet/machine.hpp>
 #include <abstractions/wallet/proto.hpp>
+#include <abstractions/wallet/spendable.hpp>
 #include <abstractions/work/work.hpp>
-#include <abstractions/redeem.hpp>
 
 namespace cosmos {
     
+    using namespace data::exported;
+    
     using byte = uint8_t;
+    using uint32 = uint32_t;
     
     using string = const std::string;
     
@@ -44,14 +44,6 @@ namespace cosmos {
     
     template <typename X>
     using ptr = std::shared_ptr<X>;
-    
-    template <typename X>
-    using list = data::linked_list<X>;
-    
-    template <typename X, typename Y>
-    using map = data::rb_map<X, Y>;
-    
-    using N = data::math::number::gmp::N;
     
     using unconstructable = data::unconstructable;
     
@@ -80,11 +72,10 @@ namespace cosmos {
             using candidate = abstractions::work::candidate;
         }
         
-        using pattern = abstractions::pattern::abstract::recognizable<secret, script, address, transaction, machine>&;
+        using pattern = abstractions::bitcoin::pattern;
         
-        using vertex = abstractions::vertex<secret, output, outpoint>;
-        transaction (*redeem)(list<pattern>, vertex) = abstractions::redeem<secret, address, script, output, outpoint, transaction, machine>;
-
+        using vertex = abstractions::bitcoin::vertex;
+        
     }
         
     // functions understood by this machine. 
