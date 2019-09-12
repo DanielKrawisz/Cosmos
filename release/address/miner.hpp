@@ -8,7 +8,7 @@
 
 namespace cosmos {
     // an address miner
-    namespace miner {
+    struct miner {
         
         // way of organizing addresses by proof-of-work
         struct address {
@@ -75,7 +75,7 @@ namespace cosmos {
         };
         
         // work until a command is received to stop. 
-        state work(state s, data::channel<command> user) {
+        static state work(state s, data::channel<command> user) {
             while (true) {
                 for (uint32 i = 0; i < s.Rounds; i++) s.round();
                 command c;
@@ -90,13 +90,13 @@ namespace cosmos {
             }
         }
         
-        state run(state s, data::channel<command> user) {
+        static state run(state s, data::channel<command> user) {
             try {
                 return work(s, user);
             } catch (std::exception& e) {
-                return state{e.what()};
+                return state{std::string{e.what()}};
             } catch (...) {
-                return state{"unknown error"};    
+                return state{std::string{"unknown error"}};    
             }
         }
         
@@ -120,10 +120,8 @@ namespace cosmos {
                 Program.join();
             }
         };
-        
-        void on_ctrl_c(int);
 
-        data::program::output run(int argc, char* argv[]);
+        data::program::output operator()(int argc, char* argv[]);
         
     };
 } 
