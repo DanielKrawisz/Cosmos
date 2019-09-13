@@ -16,14 +16,16 @@ namespace cosmos {
             bitcoin::pubkey Pubkey;
             bitcoin::address Address;
             
+            bool valid() {
+                return Secret.valid() && Pubkey.valid() && Address.valid();
+            }
+            
             bool operator<=(const address& a) const {
                 return Address.Digest >= a.Address.Digest;
             }
             
             address(bitcoin::secret s) : Secret{s}, Pubkey{s.to_public()}, Address{Pubkey.address()} {}
-            
-            bool read(address& a, istream& i);
-            void write(ostream& o);
+            address(std::string& wif) : address(bitcoin::secret{wif}) {}
         };
         
         // ordered list of addresses. 
@@ -43,14 +45,10 @@ namespace cosmos {
             address max() const {
                 return List.first();
             }
-            
-            bool read(addresses& a, istream& i);
-            void write(ostream& o);
         };
         
         // current state of the program. 
         struct state {
-            uint32 Rounds;
             uint32 Increment;
             addresses Addresses;
             bitcoin::secret Next;
@@ -58,7 +56,7 @@ namespace cosmos {
             
             state() {}
             state(const std::string& e) : Error{e} {}
-            state(uint32 r, uint32 i, addresses a, bitcoin::secret n) : Rounds{r}, Increment{i}, Addresses{a}, Next{n} {}
+            state(uint32 i, addresses a, bitcoin::secret n) : Increment{i}, Addresses{a}, Next{n} {}
             
             void round() {
                 Addresses = Addresses.update(Next);
@@ -66,7 +64,8 @@ namespace cosmos {
             }
         
             // read in program state from user input.
-            static state create(list<std::string> cmd, std::istream& in);
+            static state restore(std::istream& disk);
+            void save(std::ostream& out) const;
         };
         
         enum command {
@@ -76,8 +75,9 @@ namespace cosmos {
         
         // work until a command is received to stop. 
         static state work(state s, data::channel<command> user) {
+            const uint32 rounds = 10000;
             while (true) {
-                for (uint32 i = 0; i < s.Rounds; i++) s.round();
+                for (uint32 i = 0; i < rounds; i++) s.round();
                 command c;
                 if (user.get(c, false))
                     switch (c) {
