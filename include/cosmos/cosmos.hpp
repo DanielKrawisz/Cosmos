@@ -19,7 +19,8 @@
 #include <data/data.hpp>
 
 #include <abstractions/wallet/machine.hpp>
-#include <abstractions/wallet/proto.hpp>
+#include <abstractions/transaction.hpp>
+#include <abstractions/wallet/wallet.hpp>
 #include <abstractions/wallet/spendable.hpp>
 #include <abstractions/work/work.hpp>
 
@@ -64,7 +65,7 @@ namespace cosmos {
         using transaction = abstractions::bitcoin::transaction;
         
         using machine = abstractions::bitcoin::machine;
-        using wallet = abstractions::bitcoin::proto<machine>;
+        using wallet = abstractions::bitcoin::wallet;
         
         namespace work {
             using target = abstractions::work::target;
@@ -73,8 +74,8 @@ namespace cosmos {
         }
         
         using pattern = abstractions::bitcoin::pattern;
-        
-        using vertex = abstractions::bitcoin::vertex;
+
+        using vertex = abstractions::vertex;
         
     }
         

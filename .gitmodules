@@ -1,4 +1,8 @@
 [submodule "wallet-abstractions"]
-	path = wallet-abstractions
+	path = extern/wallet-abstractions
 	url = https://github.com/nekosune/wallet-abstractions.git
+	branch = master
+[submodule "extern/HTTPRequest"]
+	path = extern/HTTPRequest
+	url = https://github.com/elnormous/HTTPRequest
 	branch = master
