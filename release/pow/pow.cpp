@@ -108,7 +108,7 @@ namespace cosmos {
                 redeemed_value += o.Spendable.Output.Value;
             }
             
-            return bitcoin::redeem({p2pkh}, 
+            return bitcoin::redeem({p2pkh},
                 bitcoin::vertex{to_be_redeemed, {
                     abstractions::bitcoin::op_return{bytes(data)},
                     pow_lock_output(spend, abstractions::work::reference(bitcoin::hash(data)), target), 
