@@ -125,21 +125,21 @@ find_package(nlohmann_json 3.2.0 REQUIRED)
 
 
 # Pow
-#ADD_EXECUTABLE(pow
-#src/cosmos/expression.cpp
-#release/pow/pow.cpp )
-#
-#target_include_directories(pow  PUBLIC include nlohmann_json::nlohmann_json extern/HTTPRequest/include)
-#target_link_libraries(pow wallet-abstractions nlohmann_json::nlohmann_json  ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${LIB_BITCOIN_LIBRARIES} data gmock_main)
-#
-## address
-#ADD_EXECUTABLE(address
-#
-#release/address/miner.cpp )
-#
-#target_include_directories(address  PUBLIC include nlohmann_json::nlohmann_json extern/HTTPRequest/include)
-#target_link_libraries(address wallet-abstractions nlohmann_json::nlohmann_json ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${LIB_BITCOIN_LIBRARIES} data gmock_main)
-#
+ADD_EXECUTABLE(pow
+src/cosmos/expression.cpp
+release/pow/pow.cpp )
+
+target_include_directories(pow  PUBLIC include nlohmann_json::nlohmann_json extern/HTTPRequest/include)
+target_link_libraries(pow wallet-abstractions nlohmann_json::nlohmann_json  ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${LIB_BITCOIN_LIBRARIES} data gmock_main)
+
+# address
+ADD_EXECUTABLE(address
+
+release/address/miner.cpp )
+
+target_include_directories(address  PUBLIC include nlohmann_json::nlohmann_json extern/HTTPRequest/include)
+target_link_libraries(address wallet-abstractions nlohmann_json::nlohmann_json ${CRYPTOPP_LIBRARIES} ${Boost_LIBRARIES} ${LIB_BITCOIN_LIBRARIES} data gmock_main)
+
 
 # Temp
 ADD_EXECUTABLE(temp

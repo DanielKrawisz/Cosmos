@@ -74,9 +74,7 @@ namespace cosmos {
         }
         
         using pattern = abstractions::bitcoin::pattern;
-
-        using vertex = abstractions::vertex;
-        
+        using spendable = abstractions::bitcoin::spendable;
     }
         
     // functions understood by this machine. 

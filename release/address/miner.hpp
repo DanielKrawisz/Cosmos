@@ -6,14 +6,14 @@
 #include <thread>
 #include <csignal>
 
-namespace cosmos {
+namespace cosmos::bitcoin {
     // an address miner
     struct miner {
         
         // way of organizing addresses by proof-of-work
         struct address {
-            bitcoin::secret Secret;
-            bitcoin::pubkey Pubkey;
+            secret Secret;
+            pubkey Pubkey;
             bitcoin::address Address;
             
             bool valid() {
@@ -24,8 +24,8 @@ namespace cosmos {
                 return Address.Digest >= a.Address.Digest;
             }
             
-            address(bitcoin::secret s) : Secret{s}, Pubkey{s.to_public()}, Address{Pubkey.address()} {}
-            address(std::string& wif) : address(bitcoin::secret{wif}) {}
+            address(secret s) : Secret{s}, Pubkey{s.to_public()}, Address{Pubkey.address()} {}
+            address(std::string& wif) : address(secret{wif}) {}
         };
         
         // ordered list of addresses. 
@@ -51,17 +51,17 @@ namespace cosmos {
         struct state {
             uint32 Increment;
             addresses Addresses;
-            bitcoin::secret Next;
+            secret Next;
             std::string Error;
             
             state() {}
             state(const std::string& e) : Error{e} {}
-            state(uint32 i, addresses a, bitcoin::secret n) : Increment{i}, Addresses{a}, Next{n} {}
+            state(uint32 i, addresses a, secret n) : Increment{i}, Addresses{a}, Next{n} {}
             
-            void round() {
+            void round(); /*{
                 Addresses = Addresses.update(Next);
                 Next.Secret.Value += Increment;
-            }
+            }*/
         
             // read in program state from user input.
             static state restore(std::istream& disk);
@@ -109,7 +109,7 @@ namespace cosmos {
             std::thread Program;
             data::channel<command> User;
             
-            running(state s, data::channel<command> user) : Program{program{}, s, User} {}
+            running(state s, data::channel<command> user) : Program{program{user}, s} {}
         public:
             static running* run(state s) {
                 return new running{s, data::channel<command>{}};
@@ -118,6 +118,7 @@ namespace cosmos {
             state stop() {
                 User.put(command::stop);
                 Program.join();
+                return {}; // TODO put what ought to be here. 
             }
         };
 
